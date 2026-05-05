@@ -3,11 +3,12 @@ from services.contract import auction_service
 
 from schemas.dto import CommitRequestDTO
 from schemas.dto import RevealRequestDTO
+from schemas.dto import ChangePhaseRequestDTO
 
 router = APIRouter()
 
 @router.post("/commit")
-def commit_endpont (payload: CommitRequestDTO):
+def commit_endpoint (payload: CommitRequestDTO):
 
     result = auction_service.commit_bid(payload.user_id, payload.hash_value)
     
@@ -18,7 +19,7 @@ def commit_endpont (payload: CommitRequestDTO):
 
 
 @router.post("/reveal")
-def reveal_endpont(payload: RevealRequestDTO):
+def reveal_endpoint(payload: RevealRequestDTO):
 
     result = auction_service.reveal_bid(payload.user_id, payload.real_price, payload.secret_salt)
 
@@ -26,3 +27,24 @@ def reveal_endpont(payload: RevealRequestDTO):
         raise HTTPException(status_code=400, detail=result["error"])
 
     return result
+
+@router.get("/winner")
+def get_winner_endpoint():
+    
+    result = auction_service.get_winner()
+
+    if "error" in result:
+        raise HTTPException(status_code=500, detail=result["error"])
+    
+    return result
+
+@router.post("/changephase")
+def change_phase_endpoint (payload: ChangePhaseRequestDTO):
+
+    result = auction_service.change_phase (payload. new_phase)
+
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    
+    return result
+    
