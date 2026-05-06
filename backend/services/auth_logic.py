@@ -9,7 +9,7 @@ def verify_login(username: str, password: str):
     if username not in mock_db:
         return {"error": "Tài khoản không tồn tại, bạn cần đăng ký!"}
     
-    user_info = mock_db["username"]
+    user_info = mock_db[username]
     if user_info["password"] != password:
         return {"error": "Sai mật khẩu!"}
     

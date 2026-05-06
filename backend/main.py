@@ -6,4 +6,4 @@ app = FastAPI(title="Decentralized Auction API")
 
 app.include_router(auction_router, prefix="/api/auction")
 
-app.include_router(auth_router, prefix="/api/auth/")
+app.include_router(auth_router, prefix="/api/auth")

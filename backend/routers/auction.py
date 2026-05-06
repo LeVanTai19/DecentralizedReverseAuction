@@ -4,7 +4,6 @@ from services.contract import auction_service
 from schemas.dto import CommitRequestDTO
 from schemas.dto import RevealRequestDTO
 from schemas.dto import ChangePhaseRequestDTO
-from schemas.dto import GetUserInfoRequestDTO
 
 router = APIRouter(tags=["Auction system"])
 
@@ -52,18 +51,12 @@ def change_phase_endpoint (payload: ChangePhaseRequestDTO):
 @router.get("/admin/dashboard")
 def admin_dashboard_endpoint():
 
-    result = auction_service.get_admin_dashboard()
+    return auction_service.get_admin_dashboard()
 
-    if "error" in result:
-        raise HTTPException(status_code=500, detail=result["error"])
-    return result
 
 @router.get("/user/{user_id}/dashboard")
-def user_dashboard_endpoint(payload: GetUserInfoRequestDTO):
+def user_dashboard_endpoint(user_id: str):
 
-    result = auction_service.get_user_info(payload.user_id)
+    return auction_service.get_user_info(user_id)
 
-    if "error" in result:
-        raise HTTPException(status_code=500, detail=result["error"])
     
-    return result

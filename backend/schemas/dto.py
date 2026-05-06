@@ -16,6 +16,4 @@ class RevealRequestDTO (BaseModel):
 class ChangePhaseRequestDTO (BaseModel):
     new_phase: str
 
-class GetUserInfoRequestDTO (BaseModel):
-    user_id: str
 
