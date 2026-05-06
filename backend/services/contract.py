@@ -58,9 +58,9 @@ class ReverseAuctionContract:
 
         winner = min(self.valid_bid, key = self.valid_bid.get)
         lowest_price = self.valid_bid[winner]
-        return {"success": f"Đã tìm ra người trúng thầu là: {winner}, với giá thấp nhất là: {lowest_price}"}
+        return {"success": f"Đã tìm ra người trúng thầu là Ông/Bà: {winner}, với giá thấp nhất là: {lowest_price}"}
     
-     # --------- Method phụ: Đổi phase giành cho vai trò Admin --------
+    # --------- Method phụ: Đổi phase giành cho vai trò Admin --------
     def change_phase (self, new_phase: str) -> dict:
 
         valid_phases = ["COMMIT", "REVEAL", "CLOSED"]
@@ -71,5 +71,51 @@ class ReverseAuctionContract:
         self.phase = new_phase
         return {"success": f"Hệ hống đấu giá đã chuyển sang giai đoạn {self.phase}"}
     
+    # --------- Method phụ: Lấy dữ liệu trả về cho trang Admin --------
+    def get_admin_dashboard(self) -> dict:
+
+        dashboard_data_commit = {
+            "current_phase": self.phase,
+            "total_committed_users": len(self.commitments),
+            "committed_users": list(self.commitments.keys()),
+            "commitments": self.commitments
+        }
+
+        dashboard_data_reveal = {
+            "current_phase": self.phase,
+            "total_revealed_users": len(self.valid_bid),
+            "revealed_users": list(self.valid_bid.keys()),
+            "valid_bids": self.valid_bid
+        }
+
+        if self.phase == "COMMIT":
+            return dashboard_data_commit
+        
+        if self.phase == "REVEAL":
+            return dashboard_data_reveal
+        
+        if self.phase == "CLOSED":
+            dashboard_data_reveal["winner_info"] = self.get_winner()
+            return dashboard_data_reveal
+        
+    # --------- Method phụ: Lấy dữ liệu trả về cho trang User theo id --------
+    def get_user_info(self, user_id: str):
+
+        user_info = {
+            "user_id": user_id,
+            "current_phase": self.phase,
+            "has_committed": user_id in self.commitments,
+            "has_revealed": user_id in self.valid_bid
+        }
+
+        if user_id in self.commitments:
+            user_info["committed_hash"] =  self.commitments[user_id]
+
+        if user_id in self.valid_bid:
+            user_info["reveal_price"] = self.valid_bid[user_id]
+
+        if self.phase == "CLOSED":
+            user_info["winner_info"] = self.get_winner()
+        return user_info
     
 auction_service = ReverseAuctionContract() # tạo instance của class để router import 
