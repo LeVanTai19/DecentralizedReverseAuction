@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảng điều khiển - Nhà Thầu</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2 id="welcomeText">Kính chào, Ông/Bà nhà thầu</h2>
+            <button id="logoutBtn" class="btn-danger">Đăng xuất</button>
+        </div>
+
+
+        <div class="card">
+            <h3>Trạng thái hệ thống</h3>
+            <p>Giai đoạn hiện tại: <strong id="phaseStatus" class="highlight"> </strong> </p>
+            <p>Hồ sơ của bạn: <strong id="myStatus"> </strong> </p>
+            <p id="hashDisplay" style="display: none; word-break: break-all; color: gray; font-size: 14px;"></p>
+
+        </div>
+
+        <div class="card" id="actionArea">
+            <h3 id="formTitle">Nhập giá thầu của Ông/Bà</h3>
+            <form id="bidForm">
+
+                <div class="form-group">
+                    <label>Giá dự thầu ($):</label>
+                    <input type="number" id="bidPrice" placeholder="VD: 1000$" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Mã bí mật (Secret salt):</label>
+                    <input type="text" id="secretSalt" placeholder="VD: mysecret123" required>
+                </div>
+
+                <button type="submit" id="submitBtn" class="btn-primary">Băm Hash & Nộp thầu</button>
+                <div id="message" class="message"></div>
+
+            </form>
+
+        </div>
+
+    </div>
+    
+    <script src="js/user.js"></script>
+</body>
+</html>
