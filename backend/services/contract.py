@@ -55,8 +55,15 @@ class ReverseAuctionContract:
         
         if len(self.valid_bid) == 0:
             return {"error": "Không có nhà thầu nào tham gia đấu giá!"}
+        
+        # Danh sách lưu thứ tự nộp hash tại phase commit, nếu 2 người nộp cùng 1 mức giá thì ai commit trước thì win
+        commit_order = list(self.commitments.keys())
 
-        winner = min(self.valid_bid, key = self.valid_bid.get)
+        winner = min(
+            self.valid_bid.keys(), 
+            key = lambda user: (self.valid_bid[user], commit_order.index(user))
+        )
+        
         lowest_price = self.valid_bid[winner]
         return {"success": f"Đã tìm ra người trúng thầu là Ông/Bà: {winner}, với giá thấp nhất là: {lowest_price}"}
     

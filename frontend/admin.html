@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảng điều khiển - Chủ Thầu</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div class="container" style="max-width: 800px;">
+        <div class="header">
+            <h2 id="welcomeText">Trang Quản Trị Chủ Thầu</h2>
+            <button id="logoutBtn" class="btn-danger">Đăng xuất</button>
+        </div>
+
+        <!--Khung Admin thay đổi Phase-->
+        <div class="card">
+            <h3>Điều khiển trạng thái Hợp đồng</h3>
+            <div class="form-group" style="display: flex; gap: 10px; align-items: flex-end;">
+                <div style="flex-grow: 1;">
+                    <label>Chuyển giai đoạn:</label>
+                    <select id="phaseSelect" style="width: 100%; padding: 10px; border-radius: 4px;">
+                        <option value="COMMIT">Giai đoạn 1: Nộp thầu</option>
+                        <option value="REVEAL">Giai đoạn 2: Công bố giá thầu</option>
+                        <option value="CLOSED">Giai đoạn 3: Công bố kết quả</option>
+                    </select>
+                </div>
+                <button id="changePhaseBtn" class="btn-primary" style="width: 150px;">Áp dụng</button>
+
+            </div>
+
+            <div id="phaseMsg" class="message"></div>
+        </div>
+
+        <!--Khung thông báo người trúng thầu cho phase closed-->
+        <div id="winnerBanner" class="winner-banner">
+            <h2 style="margin: 0;">KẾT QUẢ BUỔI ĐẤU THẦU</h2>
+            <h3 id="winnerText" style="margin: 10px 0 0 0;"></h3>
+        </div>
+
+        <!--Bảng dữ liệu của từng phase lấy từ BE-->
+        <div class="card">
+            <h3>Dữ liệu buổi Đấu giá</h3>
+            <p>Trạng thái: <strong id="currentPhaseDisplay" class="highlight">-</strong></p>
+            <p id="statText">Tổng số nhà thầu tham gia: 0</p>
+
+            <table id="dataTable">
+                <thead>
+                    <tr id="tableHeader">
+                        <th>Mã nhà thầu</th>
+                        <th>Dữ liệu đang giữ</th>
+                    </tr>                    
+                </thead>
+
+                <tbody id="tableBody">
+                    <!--Nơi chứa các dòng dữ liệu được js lấy từ BE-->
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <script src="js/admin.js"></script>
+</body>
+</html>
