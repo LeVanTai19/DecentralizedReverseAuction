@@ -4,6 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers.auction import router as auction_router
 from routers.auth import router as auth_router
 
+from database import engine, Base
+Base.metadata.create_all(bind=engine) # lệnh giúp tự tạo file auction.db
+
 app = FastAPI(title="Decentralized Auction API")
 
 app.add_middleware(
