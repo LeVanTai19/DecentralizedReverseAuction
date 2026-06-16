@@ -1,5 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from services.contract import auction_service
+
+from sqlalchemy.orm import Session
+from database import get_db # Hàm tạo connection từ database.py
 
 from schemas.dto import CommitRequestDTO
 from schemas.dto import RevealRequestDTO
@@ -8,9 +11,9 @@ from schemas.dto import ChangePhaseRequestDTO
 router = APIRouter(tags=["Auction system"])
 
 @router.post("/commit")
-def commit_endpoint (payload: CommitRequestDTO):
+def commit_endpoint (payload: CommitRequestDTO, db: Session = Depends(get_db)):
 
-    result = auction_service.commit_bid(payload.user_id, payload.hash_value)
+    result = auction_service.commit_bid(db, payload.user_id, payload.hash_value)
     
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
@@ -19,9 +22,9 @@ def commit_endpoint (payload: CommitRequestDTO):
 
 
 @router.post("/reveal")
-def reveal_endpoint(payload: RevealRequestDTO):
+def reveal_endpoint(payload: RevealRequestDTO, db: Session = Depends(get_db)):
 
-    result = auction_service.reveal_bid(payload.user_id, payload.real_price, payload.secret_salt)
+    result = auction_service.reveal_bid(db, payload.user_id, payload.real_price, payload.secret_salt)
 
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
@@ -39,9 +42,9 @@ def get_winner_endpoint():
     return result"""
 
 @router.post("/phase")
-def change_phase_endpoint (payload: ChangePhaseRequestDTO):
+def change_phase_endpoint (payload: ChangePhaseRequestDTO, db: Session = Depends(get_db)):
 
-    result = auction_service.change_phase (payload.new_phase)
+    result = auction_service.change_phase (db, payload.new_phase)
 
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
@@ -49,14 +52,14 @@ def change_phase_endpoint (payload: ChangePhaseRequestDTO):
     return result
 
 @router.get("/admin/dashboard")
-def admin_dashboard_endpoint():
+def admin_dashboard_endpoint(db: Session = Depends(get_db)):
 
-    return auction_service.get_admin_dashboard()
+    return auction_service.get_admin_dashboard(db)
 
 
 @router.get("/user/{user_id}/dashboard")
-def user_dashboard_endpoint(user_id: str):
+def user_dashboard_endpoint(user_id: str, db: Session = Depends(get_db)):
 
-    return auction_service.get_user_info(user_id)
+    return auction_service.get_user_info(db, user_id)
 
     

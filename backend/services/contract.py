@@ -80,80 +80,106 @@ class ReverseAuctionContract:
 
         
     # -------- PHASE 3: Công bố người có giá thấp nhất --------
-    def get_winner(self) -> dict:
-        if self.phase != "CLOSED":
+    def get_winner(self, db: Session, auction_id: int = 1) -> dict:
+        auction = db.query(Auction).filter(Auction.id == auction_id).first()
+        if not auction or auction.phase != "CLOSED":
             return {"error": "Cuộc đấu giá chưa kết thúc!"}
         
-        if len(self.valid_bid) == 0:
-            return {"error": "Không có nhà thầu nào tham gia đấu giá!"}
-        
-        # Danh sách lưu thứ tự nộp hash tại phase commit, nếu 2 người nộp cùng 1 mức giá thì ai commit trước thì win
-        commit_order = list(self.commitments.keys())
+        # Lệnh SQL lọc người đã reveal và sắp xếp Giá thấp nhất, nếu giá bằng nhau thì lấy ID nhỏ nhất
+        winner_bid = db.query(Bid).filter(
+            Bid.auction_id == auction_id,
+            Bid.real_price != None,
+        ).order_by(Bid.real_price.asc(), Bid.id.asc()).first()
 
-        winner = min(
-            self.valid_bid.keys(), 
-            key = lambda user: (self.valid_bid[user], commit_order.index(user))
-        )
+        if not winner_bid:
+            return {"error": "Không có nhà thầu nào tham gia đấu giá hợp lệ!"}
         
-        lowest_price = self.valid_bid[winner]
-        return {"success": f"Đã tìm ra người trúng thầu là Ông/Bà: {winner}, với giá thấp nhất là: {lowest_price}"}
+        return {"success": f"Đã tìm ra người trúng thầu là: {winner_bid.user_id}, với giá thấp nhất là: {winner_bid.real_price}$"}
     
-    # --------- Method phụ: Đổi phase giành cho vai trò Admin --------
-    def change_phase (self, new_phase: str) -> dict:
+    # --------- Method phụ: Đổi phase giành cho vai trò Admin và tịch thu cọc --------
+    def change_phase (self, db: Session, new_phase: str, auction_id: int = 1) -> dict:
 
         valid_phases = ["COMMIT", "REVEAL", "CLOSED"]
         
         if new_phase not in valid_phases:
             return {"error": "Phase không hợp lệ!"}
         
-        self.phase = new_phase
-        return {"success": f"Hệ hống đấu giá đã chuyển sang giai đoạn {self.phase}"}
+        auction = db.query(Auction).filter(Auction.id == auction_id).first()
+        if not auction:
+            return {"error": "Không tìm thấy gói thầu!"}
+        
+        auction.phase = new_phase
+
+        # Nếu Admin closed, mà nhà thầu nào ko chịu reveal (is_staked == True), thì mất cọc 500$
+        if new_phase == "CLOSED":
+            slashed_bids = db.query(Bid).filter(
+                Bid.auction_id == auction_id,
+                Bid.is_staked == True).all()
+            
+            for bid in slashed_bids:
+                bid.is_staked == False
+
+        db.commit()
+        return {"success": f"Hệ thống đấu giá đã chuyển sang giai đoạn {new_phase}"}
     
     # --------- Method phụ: Lấy dữ liệu trả về cho trang Admin --------
-    def get_admin_dashboard(self) -> dict:
+    def get_admin_dashboard(self, db: Session, auction_id: int = 1) -> dict:
+        auction = db.query(Auction).filter(Auction.id == auction_id).first()
+        all_bids = db.query(Bid).filter(Auction.id == auction_id).all()
+
+        commitments = {}
+        valid_bids = {}
+        for b in all_bids:
+            commitments[b.user_id] = b.hash_value
+            if b.real_price is not None:
+                valid_bids[b.user_id] = b.real_price
 
         dashboard_data_commit = {
-            "current_phase": self.phase,
-            "total_committed_users": len(self.commitments),
-            "committed_users": list(self.commitments.keys()),
-            "commitments": self.commitments
+            "current_phase": auction.phase,
+            "total_committed_users": len(commitments),
+            "committed_users": list(commitments.keys()),
+            "commitments": commitments
         }
 
         dashboard_data_reveal = {
-            "current_phase": self.phase,
-            "total_revealed_users": len(self.valid_bid),
-            "revealed_users": list(self.valid_bid.keys()),
-            "valid_bids": self.valid_bid
+            "current_phase": auction.phase,
+            "total_revealed_users": len(valid_bids),
+            "revealed_users": list(valid_bids.keys()),
+            "valid_bids": valid_bids
         }
 
-        if self.phase == "COMMIT":
+        if auction.phase == "COMMIT":
             return dashboard_data_commit
         
-        if self.phase == "REVEAL":
+        if auction.phase == "REVEAL":
             return dashboard_data_reveal
         
-        if self.phase == "CLOSED":
-            dashboard_data_reveal["winner_info"] = self.get_winner()
+        if auction.phase == "CLOSED":
+            dashboard_data_reveal["winner_info"] = self.get_winner(db, auction_id)
             return dashboard_data_reveal
         
     # --------- Method phụ: Lấy dữ liệu trả về cho trang User theo id --------
-    def get_user_info(self, user_id: str):
+    def get_user_info(self, db: Session, user_id: str, auction_id: int = 1):
+        auction = db.query(Auction).filter(Auction.id == auction_id).first()
+        user = db.query(User).filter(User.id == user_id).first()
+        bid = db.query(Bid).filter(Bid.user_id == user_id, Bid.auction_id == auction_id).first()
 
         user_info = {
             "user_id": user_id,
-            "current_phase": self.phase,
-            "has_committed": user_id in self.commitments,
-            "has_revealed": user_id in self.valid_bid
+            "balance": user.balance if user else 0,
+            "current_phase": auction.phase if auction else "COMMIT",
+            "has_committed": bid is not None,
+            "has_revealed": (bid is not None and bid.real_price is not None)
         }
 
-        if user_id in self.commitments:
-            user_info["committed_hash"] =  self.commitments[user_id]
+        if bid:
+            user_info["committed_hash"] =  bid.hash_value
+            if bid.real_price is not None:
+                user_info["reveal_price"] = bid.real_price
 
-        if user_id in self.valid_bid:
-            user_info["reveal_price"] = self.valid_bid[user_id]
-
-        if self.phase == "CLOSED":
-            user_info["winner_info"] = self.get_winner()
+        if auction and auction.phase == "CLOSED":
+            user_info["winner_info"] = self.get_winner(db, auction_id)
+            
         return user_info
     
 auction_service = ReverseAuctionContract() # tạo instance của class để router import 
