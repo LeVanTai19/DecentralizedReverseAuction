@@ -8,7 +8,7 @@ class ReverseAuctionContract:
     def commit_bid (self, db: Session, user_id: str, hash_value: str, auction_id: int = 1) -> dict:
         try:
             auction = db.query(Auction).filter(Auction.id == auction_id).first()
-            if not auction or auction.phase != "COMMMIT":
+            if not auction or auction.phase != "COMMIT":
                 return {"error": "Lỗi: Không trong giai đoạn nộp thầu!"}
             
             user = db.query(User).filter(User.id == user_id).first()
