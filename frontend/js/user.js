@@ -18,13 +18,42 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
 });
 
 //Biến lưu trạng thái
+let currentAuctionId = 1;
 let currentPhase = "";
+
+// Hàm lấy Danh Sách Dự Án
+async function loadAuctions() {
+    const res = await fetch('http://127.0.0.1:8000/api/auction/all');
+    const auctions = await res.json();
+    const select = document.getElementById('auctionSelect');
+
+    // Tạo các options cho danh sách dropdown 
+    auctions.forEach(a => {
+        const option = document.createElement('option');
+        option.value = a.id;
+        option.text = `[ID: ${a.id}] ${a.title} - Trạng thái: ${a.phase}`;
+        select.appendChild(option);
+    });
+
+    if (auctions.length > 0) {
+        currentAuctionId = select.value;
+        loadDashboard();
+    }
+}
+
+// Xử lý Dropdown
+document.getElementById('auctionSelect').addEventListener('change', function() {
+    currentAuctionId = this.value;
+    loadDashboard(); // Load lại thông tin user cho dự án mới
+});
 
 //Xử lý bảng trạng thái 
 async function loadDashboard() {
     try {
-        const res = await fetch(`http://127.0.0.1:8000/api/auction/user/${userId}/dashboard`);
+        const res = await fetch(`http://127.0.0.1:8000/api/auction/user/${userId}/dashboard?auction_id=${currentAuctionId}`);
         const data = await res.json();
+
+        document.getElementById('balanceDisplay').innerText = data.balance; // MỚI: Hiện số dư
 
         currentPhase = data.current_phase
         document.getElementById('phaseStatus').innerText = data.current_phase;
@@ -93,6 +122,7 @@ async function loadDashboard() {
     }
 }
 
+// Xử lý Nộp Thầu và Mở Giá
 document.getElementById('bidForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
@@ -120,7 +150,7 @@ document.getElementById('bidForm').addEventListener('submit', async function(e) 
         console.log("Hash tạo ra:", hashValue);
 
         // Tạo message web3: ký điện tử ở FE để gửi về BE check
-        const messageToSign = `COMMIT-${auctionId}-${hashValue}`;
+        const messageToSign = `COMMIT-${currentAuctionId}-${hashValue}`;
         const md = forge.md.sha256.create();
         md.update(messageToSign,'utf8');
         const signatureBytes = privateKey.sign(md);
@@ -131,7 +161,7 @@ document.getElementById('bidForm').addEventListener('submit', async function(e) 
             const res = await fetch('http://127.0.0.1:8000/api/auction/commit', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: userId, hash_value: hashValue, signature: signatureBase64 })
+                body: JSON.stringify({ auction_id: parseInt(currentAuctionId), user_id: userId, hash_value: hashValue, signature: signatureBase64 })
             });
             const result = await res.json();
             
@@ -152,7 +182,7 @@ document.getElementById('bidForm').addEventListener('submit', async function(e) 
     else if (currentPhase === "REVEAL") {
         
         // Tạo message web3: ký điện tử ở FE để gửi về BE check
-        const messageToSign = `REVEAL-${auctionId}-${price}-${secret}`;
+        const messageToSign = `REVEAL-${currentAuctionId}-${price}-${secret}`;
         const md = forge.md.sha256.create();
         md.update(messageToSign,'utf8');
         const signatureBytes = privateKey.sign(md);
@@ -162,7 +192,7 @@ document.getElementById('bidForm').addEventListener('submit', async function(e) 
             const res = await fetch('http://127.0.0.1:8000/api/auction/reveal', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: userId, real_price: Number(price), secret_salt: secret, signature: signatureBase64 })
+                body: JSON.stringify({ auction_id: parseInt(currentAuctionId), user_id: userId, real_price: Number(price), secret_salt: secret, signature: signatureBase64 })
             });
             const result = await res.json();
             
@@ -180,4 +210,4 @@ document.getElementById('bidForm').addEventListener('submit', async function(e) 
     }
 });
 
-loadDashboard();
+loadAuctions();

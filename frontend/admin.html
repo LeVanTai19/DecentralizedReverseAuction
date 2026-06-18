@@ -14,6 +14,18 @@
             <button id="logoutBtn" class="btn-danger">Đăng xuất</button>
         </div>
 
+        <!-- MỚI: Khung Quản lý Dự án Multi-Projects -->
+        <div class="card" style="background-color: #e9ecef;">
+            <h3>Quản lý Gói thầu</h3>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <input type="text" id="newAuctionTitle" placeholder="Tên gói thầu mới (VD: Xây cầu Alpha)" style="flex: 1;">
+                <button id="createAuctionBtn" class="btn-primary" style="width: auto; background-color: #198754;">Tạo Dự án</button>
+            </div>
+            
+            <label><strong>Chọn gói thầu để Quản lý:</strong></label>
+            <select id="auctionSelect" style="width: 100%; padding: 10px; font-weight: bold;"></select>
+        </div>
+
         <!--Khung Admin thay đổi Phase-->
         <div class="card">
             <h3>Điều khiển trạng thái Hợp đồng</h3>

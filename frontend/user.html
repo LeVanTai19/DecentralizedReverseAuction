@@ -6,12 +6,24 @@
     <title>Bảng điều khiển - Nhà Thầu</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <!-- MỚI THÊM: Nhúng thư viện chữ ký số RSA Forge -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/forge/0.10.0/forge.min.js"></script>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h2 id="welcomeText">Kính chào, Ông/Bà nhà thầu</h2>
             <button id="logoutBtn" class="btn-danger">Đăng xuất</button>
+        </div>
+
+        <!--MỚI: Thêm menu cho User chọn Thầu và hiển thị số dư Balance-->
+        <div class="card" style="background-color: #e9ecef;">
+            <label><strong>Chọn Gói Thầu Ông/Bà Muốn Tham Gia:</strong></label>
+            <select id="auctionSelect" style="width: 100%; padding: 10px; font-weight: bold; margin-bottom: 10px;"></select>
+
+            <div style="text-align: right; font-size: 18px;">
+                Số dư khả dụng: <strong id="balanceDisplay" style="color: #198754;"></strong> <strong>$</strong>
+            </div>
         </div>
 
 

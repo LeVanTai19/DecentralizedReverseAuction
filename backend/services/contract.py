@@ -137,7 +137,7 @@ class ReverseAuctionContract:
         
         return {"success": f"Đã tìm ra người trúng thầu là: {winner_bid.user_id}, với giá thấp nhất là: {winner_bid.real_price}$"}
     
-    # --------- Method phụ: Đổi phase giành cho vai trò Admin và tịch thu cọc --------
+    # --------- Method phụ: Đổi phase giành cho Admin và tịch thu cọc --------
     def change_phase (self, db: Session, new_phase: str, auction_id: int = 1) -> dict:
 
         valid_phases = ["COMMIT", "REVEAL", "CLOSED"]
@@ -166,7 +166,7 @@ class ReverseAuctionContract:
     # --------- Method phụ: Lấy dữ liệu trả về cho trang Admin --------
     def get_admin_dashboard(self, db: Session, auction_id: int = 1) -> dict:
         auction = db.query(Auction).filter(Auction.id == auction_id).first()
-        all_bids = db.query(Bid).filter(Auction.id == auction_id).all()
+        all_bids = db.query(Bid).filter(Bid.auction_id == auction_id).all()
 
         commitments = {}
         valid_bids = {}
@@ -222,5 +222,17 @@ class ReverseAuctionContract:
             user_info["winner_info"] = self.get_winner(db, auction_id)
             
         return user_info
+    
+    # --------- Method phụ MỚI: Quản lý multi-projects cho Admin và Xem các projects User --------
+    def create_auction(self, db: Session, title: str) -> dict:
+        new_auction = Auction(title = title, phase = "COMMIT")
+        db.add(new_auction)
+        db.commit()
+        return {"success": "Tạo gói thầu thành công!", "auction_id": new_auction.id}
+    
+    def get_all_auctions(selft, db: Session) -> list:
+        auctions = db.query(Auction).all()
+        return [{"id": a.id, "title": a.title, "phase": a.phase} for a in auctions]
+
     
 auction_service = ReverseAuctionContract() # tạo instance của class để router import 

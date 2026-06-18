@@ -15,10 +15,60 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
     window.location.href = 'login.html'
 })
 
-//Hàm load dữ liệu Dashboard admin
+let currentAuctionId = 1; // Biến toàn cuc
+
+// MỚI: Hàm Lấy Danh Sách Các Gói Thầu
+async function loadAuctions() {
+    try {
+        const res = await fetch('http://127.0.0.1:8000/api/auction/all');
+        const auctions = await res.json()
+
+        const select = document.getElementById('auctionSelect');
+        select.innerHTML = "";
+
+        auctions.forEach(a => {
+            const option = document.createElement('option');
+            option.value = a.id;
+            option.text = `[ID: ${a.id}] ${a.title} - Trạng thái: ${a.phase}`;
+            select.appendChild(option);
+        });
+
+        if (auctions.length > 0) {
+            currentAuctionId = select.value;
+            loadAdminDashboard(); // sau khi chọn thầu thì load thông tin của thầu đó cho Admin
+        }
+
+    } catch (error) {
+        console.error("Lỗi:", error);
+    }
+}
+
+// Xử lý Dropdown menu Thầu
+document.getElementById('auctionSelect').addEventListener('change', function() {
+    currentAuctionId = this.value;
+    console.log("Đã bắt được sự kiện đổi sang Dự án số:", currentAuctionId);
+    loadAdminDashboard(); // Load lại bảng khi đổi dự án
+});
+
+// Xử lý Btn Tạo dự án
+document.getElementById('createAuctionBtn').addEventListener('click', async() => {
+    const title = document.getElementById('newAuctionTitle').value;
+    if (!title) return alert("Vui lòng nhập tên gói thầu!");
+    
+    await fetch('http://127.0.0.1:8000/api/auction/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: title })
+    });
+    alert("Tạo thành công!");
+    document.getElementById('newAuctionTitle').value = "";
+    loadAuctions(); //load lại danh sách
+});
+
+// Hàm load dữ liệu Dashboard admin
 async function loadAdminDashboard() {
     try {
-        const res = await fetch('http://127.0.0.1:8000/api/auction/admin/dashboard');
+        const res = await fetch(`http://127.0.0.1:8000/api/auction/admin/dashboard?auction_id=${currentAuctionId}`);
         const data = await res.json();
 
         const currentPhase = data.current_phase;
@@ -91,7 +141,7 @@ document.getElementById('changePhaseBtn').addEventListener('click', async () => 
         const res = await fetch('http://127.0.0.1:8000/api/auction/phase', {
             method: "POST",
             headers: {'Content-type': 'application/json'},
-            body: JSON.stringify({new_phase: newPhase})
+            body: JSON.stringify({ auction_id: parseInt(currentAuctionId), new_phase: newPhase })
         });
 
         const result = await res.json();
@@ -114,5 +164,5 @@ document.getElementById('changePhaseBtn').addEventListener('click', async () => 
     }
 });
 
-loadAdminDashboard();
+loadAuctions();
 

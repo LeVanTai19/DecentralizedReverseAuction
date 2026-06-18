@@ -7,13 +7,24 @@ from database import get_db # Hàm tạo connection từ database.py
 from schemas.dto import CommitRequestDTO
 from schemas.dto import RevealRequestDTO
 from schemas.dto import ChangePhaseRequestDTO
+from schemas.dto import CreateAuctionDTO
 
 router = APIRouter(tags=["Auction system"])
 
+#----------------- API Quản Lý Dự Án Multi-Projects (MỚI) -----------------
+@router.post("/create")
+def create_auction_endpoint(payload: CreateAuctionDTO, db: Session = Depends(get_db)):
+    return auction_service.create_auction(db, payload.title)
+
+@router.get("/all")
+def get_all_auctions_endpoint(db: Session = Depends(get_db)):
+    return auction_service.get_all_auctions(db)
+
+#----------------- API Đấu Giá ----------------
 @router.post("/commit")
 def commit_endpoint (payload: CommitRequestDTO, db: Session = Depends(get_db)):
 
-    result = auction_service.commit_bid(db, payload.user_id, payload.hash_value, payload.signature)
+    result = auction_service.commit_bid(db, payload.user_id, payload.hash_value, payload.signature, payload.auction_id)
     
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
@@ -24,7 +35,7 @@ def commit_endpoint (payload: CommitRequestDTO, db: Session = Depends(get_db)):
 @router.post("/reveal")
 def reveal_endpoint(payload: RevealRequestDTO, db: Session = Depends(get_db)):
 
-    result = auction_service.reveal_bid(db, payload.user_id, payload.real_price, payload.secret_salt, payload.signature)
+    result = auction_service.reveal_bid(db, payload.user_id, payload.real_price, payload.secret_salt, payload.signature, payload.auction_id)
 
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
@@ -44,22 +55,23 @@ def get_winner_endpoint():
 @router.post("/phase")
 def change_phase_endpoint (payload: ChangePhaseRequestDTO, db: Session = Depends(get_db)):
 
-    result = auction_service.change_phase (db, payload.new_phase)
+    result = auction_service.change_phase (db, payload.new_phase, payload.auction_id)
 
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
     
     return result
 
+#----------------- API Lấy Data Dashboard ----------------
 @router.get("/admin/dashboard")
-def admin_dashboard_endpoint(db: Session = Depends(get_db)):
-
-    return auction_service.get_admin_dashboard(db)
+def get_admin_dashboard_endpoint(auction_id: int = 1, db: Session = Depends(get_db)):
+    
+    return auction_service.get_admin_dashboard(db, auction_id)
 
 
 @router.get("/user/{user_id}/dashboard")
-def user_dashboard_endpoint(user_id: str, db: Session = Depends(get_db)):
+def user_dashboard_endpoint(user_id: str, auction_id: int = 1, db: Session = Depends(get_db)):
 
-    return auction_service.get_user_info(db, user_id)
+    return auction_service.get_user_info(db, user_id, auction_id)
 
     
