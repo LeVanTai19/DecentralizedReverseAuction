@@ -2,16 +2,49 @@ import hashlib
 from sqlalchemy.orm import Session 
 from models import User, Auction, Bid
 
+import base64
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.serialization import load_pem_public_key
+
 class ReverseAuctionContract:
+    # -------- Hàm phụ: Check chữ ký số ------------
+    def verify_rsa_signature(self, public_key_pem: str, message: str, signature_b64: str) -> bool:
+        try:
+            # lấy public key của user từ DB
+            public_key = load_pem_public_key(public_key_pem.encode('utf-8'))
+
+            # Giải mã chữ ký
+            signature = base64.b64decode(signature_b64)
+
+            # Đối chiếu chữ ký với message
+            public_key.verify(
+                signature,
+                message.encode('utf-8'),
+                padding.PKCS1v15(),
+                hashes.SHA256()
+            )
+            return True
+        
+        except Exception as e:
+            print(f"Lỗi chữ ký: {e}")
+            return False
+
 
     # -------- PHASE 1: method nộp thầu --------
-    def commit_bid (self, db: Session, user_id: str, hash_value: str, auction_id: int = 1) -> dict:
+    def commit_bid (self, db: Session, user_id: str, hash_value: str, signature: str, auction_id: int = 1) -> dict:
         try:
             auction = db.query(Auction).filter(Auction.id == auction_id).first()
             if not auction or auction.phase != "COMMIT":
                 return {"error": "Lỗi: Không trong giai đoạn nộp thầu!"}
             
             user = db.query(User).filter(User.id == user_id).first()
+
+            # THÊM MỚI: Bảo mật web3 - check chữ ký trước tiên
+            message_to_sign = f"COMMIT-{auction_id}-{hash_value}"
+            is_valid = self.verify_rsa_signature(user.public_key, message_to_sign, signature)
+            if not is_valid:
+                return {"error": "Xác thực THẤT BẠI: Chữ ký số không hợp lệ hoặc bạn không phải chủ nhân ví!"}
 
             existing_bid = db.query(Bid).filter(Bid.user_id == user_id, Bid.auction_id == auction_id).first()
             if existing_bid:
@@ -42,18 +75,26 @@ class ReverseAuctionContract:
             return {"error": f"Lỗi hệ thống: {e}"}
         
     # -------- PHASE 2: method công bố giá thầu --------
-    def reveal_bid (self, db: Session, user_id: str, actual_price: float, secret_salt: str, auction_id: int = 1) -> dict:
+    def reveal_bid (self, db: Session, user_id: str, actual_price: float, secret_salt: str, signature: str, auction_id: int = 1) -> dict:
         try: 
             auction = db.query(Auction).filter(Auction.id == auction_id).first()
             if not auction or auction.phase != "REVEAL":
                 return {"error": "Lỗi: Chưa đến thời gian công bố giá thầu!"}
             
+            user = db.query(User).filter(User.id == user_id).first()
             bid = db.query(Bid).filter(Bid.user_id == user_id, Bid.auction_id == auction_id).first()
+
             if not bid:
                 return {"error": "Lỗi: Bạn chưa nộp hồ sơ ẩn ở giai đoạn COMMIT!"}
             
             if bid.real_price is not None:
                 return {"error": "Lỗi: Bạn đã công bố giá thành công rồi!"}
+            
+            # THÊM: Bảo mật web3 - Check chữ ký số
+            message_to_sign = f"REVEAL-{auction_id}-{actual_price}-{secret_salt}"
+            is_valid = self.verify_rsa_signature(user.public_key, message_to_sign, signature)
+            if not is_valid:
+                return {"error": "Xác thực THẤT BẠI: Chữ ký số không hợp lệ!"}
             
             # Tái tạo và đối chiếu mã hash
             raw_string = f"{actual_price}-{secret_salt}"

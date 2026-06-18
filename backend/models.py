@@ -6,6 +6,7 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(String, primary_key=True, index=True)
+    public_key = Column(String, nullable = True) # Lưu khóa công khai của user
     balance = Column(Float, default=10000.0) # Tạo acc sẽ cho 10.000$
     role = Column(String, default="user")
 

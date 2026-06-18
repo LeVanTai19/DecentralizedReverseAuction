@@ -1,21 +1,36 @@
-mock_db = {
-    "admin": {"name": "Chủ đầu tư", "password": "123", "role": "admin" },
-    "user1": {"name": "Nhà Thầu A", "password": "1", "role": "user"},
-    "user2": {"name": "Nhà Thầu B", "password": "2", "role": "user"},
-    "user3": {"name": "Nhà Thầu C", "password": "3", "role": "user"},
-}
+from sqlalchemy.orm import Session
+from models import User
 
-def verify_login(username: str, password: str):
-    if username not in mock_db:
-        return {"error": "Tài khoản không tồn tại, bạn cần đăng ký!"}
+def register_user_logic(db: Session, username: str, public_key: str) -> dict:
+
+    # check xem username (id) này đã có người nào đăng ký chưa
+    existing_user = db.query(User).filter(User.id == username).first()
+    if existing_user:
+        return {"error": "Tên tài khoản này đã có người sử dụng!"}
     
-    user_info = mock_db[username]
-    if user_info["password"] != password:
-        return {"error": "Sai mật khẩu!"}
+    new_user = User(
+        id = username,
+        role = "user",
+        balance = 10000.0,
+        public_key = public_key
+    )
+
+    db.add(new_user)
+    db.commit()
+    return {"success": "Tạo Ví thành công!", "user_id": new_user.id}
+
+def verify_login_logic(db: Session, username: str, password: str = None) -> dict:
+    user = db.query(User).filter(User.id == username).first()
+
+    if not user:
+        return {"error": "Tài khoản không tồn tại! Vui lòng tạo Ví trước!"}
+    
+    if user.role == "admin" and password != "123":
+        return {"error": "Sai mật khẩu Admin!"}
     
     return {
         "success": "Bạn đã đăng nhập thành công",
-        "user_id": username,
-        "role": user_info["role"],
-        "name": user_info["name"]
+        "user_id": user.id,
+        "role": user.role,
+        "name": "Chủ Đầu Tư" if user.role == "admin" else f"Nhà thầu {user.id}"
     }

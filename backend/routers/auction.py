@@ -13,7 +13,7 @@ router = APIRouter(tags=["Auction system"])
 @router.post("/commit")
 def commit_endpoint (payload: CommitRequestDTO, db: Session = Depends(get_db)):
 
-    result = auction_service.commit_bid(db, payload.user_id, payload.hash_value)
+    result = auction_service.commit_bid(db, payload.user_id, payload.hash_value, payload.signature)
     
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
@@ -24,7 +24,7 @@ def commit_endpoint (payload: CommitRequestDTO, db: Session = Depends(get_db)):
 @router.post("/reveal")
 def reveal_endpoint(payload: RevealRequestDTO, db: Session = Depends(get_db)):
 
-    result = auction_service.reveal_bid(db, payload.user_id, payload.real_price, payload.secret_salt)
+    result = auction_service.reveal_bid(db, payload.user_id, payload.real_price, payload.secret_salt, payload.signature)
 
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])

@@ -7,17 +7,19 @@ body {
     background-color: #f4f7f6; 
     margin: 0;
 }
-
-/* --------- Style Trang Đăng Nhập ----------*/
-.login-box{
-    background: white; 
-    padding: 30px; 
-    border-radius: 8px; 
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
-    width: 300px; 
-    text-align: center;
+.container-login { 
+    display: flex; 
+    gap: 30px; 
+}
+.box {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    width: 320px;
 }
 
+/* --------- Style Trang Đăng ký & Đăng Nhập ----------*/
 input {
     width: 90%; 
     padding: 10px; 
@@ -27,8 +29,7 @@ input {
 }
 
 button {
-    width: 98%; 
-    margin-top: 10px;
+    width: 100%; 
     padding: 10px; 
     background: #28a745; 
     color: white; 
@@ -38,14 +39,22 @@ button {
     font-size: 16px;
 }
 
-button:hover {
-    background: #218838;
+.btn-register { 
+    background: #e67e22; /* Màu cam cho Web3 */
+} 
+.btn-register:hover { 
+    background: #d35400; 
 }
-
-#errorMessage {
-    color: red; 
+.btn-login { 
+    background: #28a745; 
+}
+.btn-login:hover { 
+    background: #218838; 
+}
+.message {
     margin-top: 10px; 
-    font-size: 14px;
+    font-size: 14px; 
+    text-align: center; 
 }
 
 /* --------- Style Trang User ----------*/

@@ -31,9 +31,7 @@ def seed_data():
 
     # Tạo các User mặc định
     users_to_seed = [
-        {"id": "admin", "role": "admin", "balance": 0},
-        {"id": "user1", "role": "user", "balance": 10000},
-        {"id": "user2", "role": "user", "balance": 10000}
+        {"id": "admin", "role": "admin", "balance": 0, "public_key": None}
     ]
 
     for u in users_to_seed:

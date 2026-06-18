@@ -3,14 +3,17 @@ const userId = localStorage.getItem('user_id');
 const role = localStorage.getItem('role');
 
 if (!userId || role !== 'user') {
-    alert ("Vui lòng đnag nhập với tài khoản nhà thầu");
+    alert ("Vui lòng đăng nhập với tài khoản nhà thầu");
     window.location.href = 'login.html';
 }
 
 //Xử lý header 
 document.getElementById('welcomeText').innerText = "Kính chào, " + localStorage.getItem('name');
 document.getElementById('logoutBtn').addEventListener('click', () => {
-    localStorage.clear();
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('role');
+    localStorage.removeItem('name');
+    
     window.location.href = 'login.html'
 });
 
@@ -97,6 +100,16 @@ document.getElementById('bidForm').addEventListener('submit', async function(e) 
     const secret = document.getElementById('secretSalt').value;
     const msgDiv = document.getElementById('message');
 
+    // lấy Private key từ trình duyệt
+    const privateKeyPem = localStorage.getItem('privateKey_' + userId);
+    if (!privateKeyPem) {
+        msgDiv.innerText = "Lỗi: Trình duyệt không chứa Private Key của bạn. Bạn không thể Ký giao dịch!";
+        msgDiv.style.color = "red";
+        return;
+    }
+    const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
+    const auctionId = 1;
+
     //Nếu ở phase commit thì userid và nộp hash về BE
     if (currentPhase === "COMMIT") {
     
@@ -106,11 +119,19 @@ document.getElementById('bidForm').addEventListener('submit', async function(e) 
         console.log("Chuỗi gốc:", rawString);
         console.log("Hash tạo ra:", hashValue);
 
+        // Tạo message web3: ký điện tử ở FE để gửi về BE check
+        const messageToSign = `COMMIT-${auctionId}-${hashValue}`;
+        const md = forge.md.sha256.create();
+        md.update(messageToSign,'utf8');
+        const signatureBytes = privateKey.sign(md);
+        const signatureBase64 = forge.util.encode64(signatureBytes); // Mã hóa ra Base64 để gửi qua mạng
+
+
         try {
             const res = await fetch('http://127.0.0.1:8000/api/auction/commit', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: userId, hash_value: hashValue })
+                body: JSON.stringify({ user_id: userId, hash_value: hashValue, signature: signatureBase64 })
             });
             const result = await res.json();
             
@@ -129,11 +150,19 @@ document.getElementById('bidForm').addEventListener('submit', async function(e) 
 
     //Nếu ở phase reveal thì nộp userid và giá + salt về BE
     else if (currentPhase === "REVEAL") {
+        
+        // Tạo message web3: ký điện tử ở FE để gửi về BE check
+        const messageToSign = `REVEAL-${auctionId}-${price}-${secret}`;
+        const md = forge.md.sha256.create();
+        md.update(messageToSign,'utf8');
+        const signatureBytes = privateKey.sign(md);
+        const signatureBase64 = forge.util.encode64(signatureBytes);
+
         try {
             const res = await fetch('http://127.0.0.1:8000/api/auction/reveal', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: userId, real_price: Number(price), secret_salt: secret })
+                body: JSON.stringify({ user_id: userId, real_price: Number(price), secret_salt: secret, signature: signatureBase64 })
             });
             const result = await res.json();
             

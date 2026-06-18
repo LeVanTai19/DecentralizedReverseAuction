@@ -8,7 +8,10 @@ document.getElementById('welcomeText').innerText = "Kính chào, " + localStorag
 
 //Nút đăng xuất
 document.getElementById('logoutBtn').addEventListener('click', () => {
-    localStorage.clear
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('role');
+    localStorage.removeItem('name');
+    
     window.location.href = 'login.html'
 })
 
